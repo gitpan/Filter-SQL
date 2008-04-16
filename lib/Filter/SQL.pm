@@ -4,25 +4,24 @@ use strict;
 use warnings;
 use Filter::Simple;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 FILTER_ONLY
     code => sub {
-        s{(SQL\s+(?:SELECT\s+ROW|\S+)|EXEC\s+SELECT|SELECT\s+ROW|SELECT|INSERT|UPDATE|DELETE|REPLACE) ([^;]*);}{'Filter::SQL->' . Filter::SQL::to_func($1) . quote_vars($2) . "')"}egm;
+        s{(EXEC\s+(?:\S+)|SELECT\s+ROW|SELECT|INSERT|UPDATE|DELETE|REPLACE) ([^;]*);}{'Filter::SQL->' . Filter::SQL::to_func($1) . quote_vars($2) . "')"}egm;
     };
 
 sub to_func {
     my $op = shift;
     $op = uc $op;
-    return "sql_prepare_exec('SELECT "
-        if $op =~ /^EXEC\s+SELECT/;
-    $op = $' if $op =~ /^SQL\s+/;
-    if ($op =~ /^SELECT\s+ROW/) {
+    if ($op =~ /^EXEC\s+/) {
+        return "sql_prepare_exec('$' ";
+    } elsif ($op =~ /^SELECT\s+ROW/) {
         return "sql_selectrow('SELECT ";
     } elsif ($op eq 'SELECT') {
         return "sql_selectall('SELECT ";
     } else {
-        return "sql_do('$op ";
+        return "sql_prepare_exec('$op ";
     }
 }
 
@@ -91,11 +90,6 @@ sub sql_selectrow {
     wantarray ? @$rows : $rows->[0];
 }
 
-sub sql_do {
-    my ($klass, $sql) = @_;
-    $dbh->do($sql);
-}
-
 sub quote {
     my ($klass, $v) = @_;
     $dbh->quote($v);
@@ -114,7 +108,7 @@ Filter::SQL - embedded SQL for perl
 
   Filter::SQL->dbh(DBI->connect('dbi:...')) or die DBI->errstr;
 
-  SQL CREATE TABLE t (v int not null);;
+  EXEC CREATE TABLE t (v int not null);;
 
   $v = 12345;
   INSERT INTO t (v) VALUES ($v);;
@@ -131,22 +125,13 @@ Filter::SQL - embedded SQL for perl
 
 Filter::SQL recognizes portion of source code starting from one of the keywords below as an SQL statement, terminated by a semicolon.
 
-  SQL
   SELECT
   SELECT ROW
-  EXEC SELECT
+  EXEC
   INSERT
   UPDATE
   DELETE
   REPLACE
-
-=head2 "SQL" statement
-
-Executes following string as a SQL statement.  Returns an array of rows if executed statement is a SELECT statement, or returns result code if otherwise.
-
-  my @row = SQL SELECT * FROM t;;
-
-  SQL DROP TABLE t;;
 
 =head2 "SELECT" statement
 
@@ -162,9 +147,11 @@ Executes a SQL SELECT statement and returns the first row.
 
   my $sum = SELECT ROW SUM(v) FROM t;;
 
-=head2 "EXEC SELECT" statement
+=head2 "EXEC" statement
 
-Executes a SELECT statement and returns a DBI statement object.
+Executes following string as a SQL statement and returns statement handle.
+
+  EXEC DROP TABLE t;;
 
   my $sth = EXEC SELECT * FROM t;;
   while (my @row = $sth->fetchrow_array) {
@@ -176,7 +163,7 @@ Executes a SELECT statement and returns a DBI statement object.
 =head2 "DELETE" statement
 =head2 "REPLACE" statement
 
-Executes a SQL statement and returns result code.
+Executes a SQL statement and returns statement handle.
 
 =head2 VARIABLE SUBSTITUTION
 
@@ -202,4 +189,3 @@ Copyright (C) 2008 by Cybozu Labs, Inc.
 This library is free software; you can redistribute it and/or modify it under the same terms as Perl itself, either Perl version 5.8.6 or, at your option, any later version of Perl 5 you may have available.
 
 =cut
-

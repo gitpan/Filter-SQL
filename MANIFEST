@@ -1,5 +1,6 @@
 Changes
 Filter-SQL-0.01.tar.gz
+Filter-SQL-0.02.tar.gz
 inc/Module/AutoInstall.pm
 inc/Module/Install.pm
 inc/Module/Install/AutoInstall.pm

@@ -1,4 +1,7 @@
 Revision history for Perl extension Filter::SQL.
 
+0.02  Thu Apr 16 10:40:00 2008
+	- merge "SQL" statement to "EXEC"
+	
 0.01  Thu Apr 16 10:00:00 2008
 	- initial release

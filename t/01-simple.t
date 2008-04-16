@@ -39,8 +39,8 @@ is(SELECT ROW $a->{foo}-1;, 2);
 
 is(SELECT ROW {1 + 2};, 3);
 
-ok(SQL DROP TABLE IF EXISTS filter_sql_t;);
-ok(SQL CREATE TABLE filter_sql_t (v INT NOT NULL););
+ok(EXEC DROP TABLE IF EXISTS filter_sql_t;);
+ok(EXEC CREATE TABLE filter_sql_t (v INT NOT NULL););
 
 for (my $n = 0; $n < 3; $n++) {
     ok(INSERT INTO filter_sql_t (v) VALUES ($n););
