@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Filter::Simple;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 FILTER_ONLY
     code => sub {
@@ -38,7 +38,8 @@ sub quote_vars {
             my ($var, $depth) = ($&, $& eq '$' ? 0 : 1);
             while ($src ne '') {
                 if ($depth == 0) {
-                    last unless $src =~ /^([A-Za-z0-9_]+(?:->|))|([\[\{])/;
+                    last
+                        unless $src =~ /^(?:([A-Za-z0-9_]+(?:->|))|([\[\{\(]))/;
                     $src = $';
                     if ($1) {
                         $var .= $1;
@@ -47,7 +48,7 @@ sub quote_vars {
                         $depth++;
                     }
                 } else {
-                    last unless $src =~ /([\]\}](?:->|))/;
+                    last unless $src =~ /([\]\}\)](?:->|))/;
                     $src = $';
                     $var .= "$`$1";
                     $depth--;
@@ -98,6 +99,7 @@ sub quote {
 1;
 
 __END__
+
 =head1 NAME
 
 Filter::SQL - embedded SQL for perl

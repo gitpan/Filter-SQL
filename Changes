@@ -1,7 +1,10 @@
 Revision history for Perl extension Filter::SQL.
 
-0.02  Thu Apr 16 10:40:00 2008
+0.03  Wed Apr 16 18:14:00 2008
+	- fix handling of brackets, accept as part of perl expr. () as well
+
+0.02  Wed Apr 16 10:40:00 2008
 	- merge "SQL" statement to "EXEC"
-	
-0.01  Thu Apr 16 10:00:00 2008
+
+0.01  Wed Apr 16 10:00:00 2008
 	- initial release
