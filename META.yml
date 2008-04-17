@@ -18,4 +18,4 @@ requires:
   DBI: 0
   Filter::Simple: 0.82
   Text::Balanced: 2.0.0
-version: 0.04
+version: 0.05

@@ -5,11 +5,11 @@ use warnings;
 use Carp;
 use Filter::Simple;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 FILTER_ONLY
     code => sub {
-        s{(EXEC\s+(?:\S+)|SELECT\s+ROW|SELECT|INSERT|UPDATE|DELETE|REPLACE) ([^;]*);}{'Filter::SQL->' . Filter::SQL::to_func($1) . quote_vars($2) . "')"}egm;
+        s{(EXEC\s+(?:\S+)|SELECT\s+ROW|SELECT|INSERT|UPDATE|DELETE|REPLACE) ([^;]*);}{'Filter::SQL->' . Filter::SQL::to_func($1) . quote_vars($2) . ")"}egm;
     };
 
 sub to_func {
@@ -31,11 +31,13 @@ sub quote_vars {
     my $ph = $Filter::Simple::placeholder;
     $src =~ s/$ph/recover_quotelike($&, $1)/egm;
     my $out;
+    my @params;
     while ($src =~ /($ph)|(\$|\{)/) {
         $out .= $`;
         $src = $';
         if ($1) {
-            $out .= "' . Filter::SQL->quote($1) . '";
+            $out .= '?';
+            push @params, $1;
         } else {
             my ($var, $depth) = ($&, $& eq '$' ? 0 : 1);
             while ($src ne '') {
@@ -57,11 +59,12 @@ sub quote_vars {
                 }
             }
             $var =~ s/^{(.*)}$/$1/m;
-            $out .= "' . Filter::SQL->quote($var) . '";
+            $out .= '?';
+            push @params, $var;
         }
     }
     $out .= $src;
-    $out;
+    join ',', "$out'", @params;
 }
 
 sub recover_quotelike {
@@ -81,41 +84,40 @@ sub dbh {
 }
 
 sub sql_prepare_exec {
-    my ($klass, $sql) = @_;
+    my ($klass, $sql, @params) = @_;
     my $pe = $dbh->{PrintError};
     local $dbh->{PrintError} = undef;
     my $sth = $dbh->prepare($sql);
-    if (! $sth && $pe) {
-        carp $dbh->errstr;
+    unless ($sth) {
+        carp $dbh->errstr if $pe;
         return;
     }
-    $sth->execute or return;
-    if (! $sth && $pe) {
-        carp $dbh->errstr;
+    unless ($sth->execute(@params)) {
+        carp $dbh->errstr if $pe;
         return;
     }
     $sth;
 }
 
 sub sql_selectall {
-    my ($klass, $sql) = @_;
+    my ($klass, $sql, @params) = @_;
     my $pe = $dbh->{PrintError};
     local $dbh->{PrintError} = undef;
-    my $rows = $dbh->selectall_arrayref($sql);
-    if (! $rows && $pe) {
-        carp $dbh->errstr;
+    my $rows = $dbh->selectall_arrayref($sql, {}, @params);
+    unless ($rows) {
+        carp $dbh->errstr if $pe;
         return;
     }
     wantarray ? @$rows : $rows->[0];
 }
 
 sub sql_selectrow {
-    my ($klass, $sql) = @_;
+    my ($klass, $sql, @params) = @_;
     my $pe = $dbh->{PrintError};
     local $dbh->{PrintError} = undef;
-    my $rows = $dbh->selectrow_arrayref($sql);
-    if (! $rows && $pe) {
-        carp $dbh->errstr;
+    my $rows = $dbh->selectrow_arrayref($sql, {}, @params);
+    unless ($rows) {
+        carp $dbh->errstr if $pe;
         return;
     }
     wantarray ? @$rows : $rows->[0];
