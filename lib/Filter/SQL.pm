@@ -2,9 +2,10 @@ package Filter::SQL;
 
 use strict;
 use warnings;
+use Carp;
 use Filter::Simple;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 FILTER_ONLY
     code => sub {
@@ -28,6 +29,7 @@ sub to_func {
 sub quote_vars {
     my $src = shift;
     my $ph = $Filter::Simple::placeholder;
+    $src =~ s/$ph/recover_quotelike($&, $1)/egm;
     my $out;
     while ($src =~ /($ph)|(\$|\{)/) {
         $out .= $`;
@@ -62,6 +64,12 @@ sub quote_vars {
     $out;
 }
 
+sub recover_quotelike {
+    my ($ph, $n) = ($_[0], unpack('N', $_[1]));
+    my $s = ${$Filter::Simple::components[$n]};
+    $s =~ /^[\'\"]/ ? $ph : $s;
+}
+
 my $dbh;
 
 sub dbh {
@@ -74,20 +82,42 @@ sub dbh {
 
 sub sql_prepare_exec {
     my ($klass, $sql) = @_;
-    my $sth = $dbh->prepare($sql) or return;
+    my $pe = $dbh->{PrintError};
+    local $dbh->{PrintError} = undef;
+    my $sth = $dbh->prepare($sql);
+    if (! $sth && $pe) {
+        carp $dbh->errstr;
+        return;
+    }
     $sth->execute or return;
+    if (! $sth && $pe) {
+        carp $dbh->errstr;
+        return;
+    }
     $sth;
 }
 
 sub sql_selectall {
     my ($klass, $sql) = @_;
+    my $pe = $dbh->{PrintError};
+    local $dbh->{PrintError} = undef;
     my $rows = $dbh->selectall_arrayref($sql);
+    if (! $rows && $pe) {
+        carp $dbh->errstr;
+        return;
+    }
     wantarray ? @$rows : $rows->[0];
 }
 
 sub sql_selectrow {
     my ($klass, $sql) = @_;
+    my $pe = $dbh->{PrintError};
+    local $dbh->{PrintError} = undef;
     my $rows = $dbh->selectrow_arrayref($sql);
+    if (! $rows && $pe) {
+        carp $dbh->errstr;
+        return;
+    }
     wantarray ? @$rows : $rows->[0];
 }
 
@@ -161,8 +191,11 @@ Executes following string as a SQL statement and returns statement handle.
   }
 
 =head2 "INSERT" statement
+
 =head2 "UPDATE" statement
+
 =head2 "DELETE" statement
+
 =head2 "REPLACE" statement
 
 Executes a SQL statement and returns statement handle.

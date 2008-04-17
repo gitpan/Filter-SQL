@@ -10,7 +10,7 @@ BEGIN {
     if (! $ENV{FILTER_SQL_DBI}) {
         plan skip_all => 'Set FILTER_SQL_DBI to run these tests';
     } else {
-        plan tests => 24;
+        plan tests => 32;
     }
 };
 
@@ -58,3 +58,24 @@ is_deeply(
     [ [ 0 ], [ 1 ], [ 2 ], ],
 );
 is(SELECT ROW COUNT(*) FROM filter_sql_t;, 3);
+
+ok(EXEC DROP TABLE filter_sql_t;);
+ok(EXEC CREATE TABLE filter_sql_t (
+    S INT NOT NULL,
+    Q INT NOT NULL,
+    G INT NOT NULL
+););
+ok(INSERT INTO filter_sql_t (`s`,`q`,`g`) VALUES (11,21,31););
+ok(DELETE FROM filter_sql_t;);
+ok(INSERT INTO filter_sql_t (s,q,g) VALUES (11,21,31););
+is_deeply(
+    [ SELECT ROW s,1,2,g FROM filter_sql_t; ],
+    [ 11,1,2,31 ],
+);
+is_deeply(
+    [ SELECT ROW q,1,g FROM filter_sql_t; ],
+    [ 21,1,31 ],
+);
+
+ok(EXEC DROP TABLE filter_sql_t;);
+

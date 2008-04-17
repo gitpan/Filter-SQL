@@ -1,5 +1,9 @@
 Revision history for Perl extension Filter::SQL.
 
+0.04  Thu Apr 17 12:25:00 2008
+	- handle quote-like operators within SQL statement as SQL literal
+	- report SQL errors from perspective all caller
+
 0.03  Wed Apr 16 18:14:00 2008
 	- fix handling of brackets, accept as part of perl expr. () as well
 
