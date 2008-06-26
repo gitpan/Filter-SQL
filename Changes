@@ -1,5 +1,8 @@
 Revision history for Perl extension Filter::SQL.
 
+0.06  Thu Jun 26 16:15:00 2008
+	- (SELECT ROW) do not croak when table is empty
+
 0.05  Thu Apr 17 13:49:00 2008
 	- use SQL placeholders (?) instead of $dbi->quote
 	- fix error handling of SQL statement errors introduced in 0.04

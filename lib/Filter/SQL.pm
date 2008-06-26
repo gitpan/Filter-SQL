@@ -5,11 +5,12 @@ use warnings;
 use Carp;
 use Filter::Simple;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 FILTER_ONLY
     code => sub {
         s{(EXEC\s+(?:\S+)|SELECT\s+ROW|SELECT|INSERT|UPDATE|DELETE|REPLACE) ([^;]*);}{'Filter::SQL->' . Filter::SQL::to_func($1) . quote_vars($2) . ")"}egm;
+#        print STDERR $_; $_;
     };
 
 sub to_func {
@@ -115,12 +116,12 @@ sub sql_selectrow {
     my ($klass, $sql, @params) = @_;
     my $pe = $dbh->{PrintError};
     local $dbh->{PrintError} = undef;
-    my $rows = $dbh->selectrow_arrayref($sql, {}, @params);
+    my $rows = $dbh->selectall_arrayref($sql, {}, @params);
     unless ($rows) {
         carp $dbh->errstr if $pe;
         return;
     }
-    wantarray ? @$rows : $rows->[0];
+    @$rows ? wantarray ? @{$rows->[0]} : $rows->[0][0] : ();
 }
 
 sub quote {

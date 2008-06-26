@@ -10,7 +10,7 @@ BEGIN {
     if (! $ENV{FILTER_SQL_DBI}) {
         plan skip_all => 'Set FILTER_SQL_DBI to run these tests';
     } else {
-        plan tests => 32;
+        plan tests => 36;
     }
 };
 
@@ -42,9 +42,29 @@ is(SELECT ROW {1 + 2};, 3);
 ok(EXEC DROP TABLE IF EXISTS filter_sql_t;);
 ok(EXEC CREATE TABLE filter_sql_t (v INT NOT NULL););
 
+is_deeply(
+    [ SELECT ROW * FROM filter_sql_t; ],
+    [],
+);
+
+is_deeply(
+    scalar(SELECT ROW * FROM filter_sql_t;),
+    undef,
+);
+
 for (my $n = 0; $n < 3; $n++) {
     ok(INSERT INTO filter_sql_t (v) VALUES ($n););
 }
+
+is_deeply(
+    scalar(SELECT ROW * FROM filter_sql_t;),
+    0,
+);
+
+is_deeply(
+    [ SELECT ROW * FROM filter_sql_t; ],
+    [ 0 ],
+);
 
 my $sth = EXEC SELECT v FROM filter_sql_t;;
 ok($sth);
@@ -78,4 +98,3 @@ is_deeply(
 );
 
 ok(EXEC DROP TABLE filter_sql_t;);
-
