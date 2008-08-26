@@ -5,7 +5,7 @@ use warnings;
 use Carp;
 use Filter::Simple;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 FILTER_ONLY
     code => sub {
@@ -80,8 +80,9 @@ sub dbh {
     my $klass = shift;
     if (@_) {
         $dbh = shift;
+        return; # returns undef
     }
-    $dbh;
+    ref $dbh eq 'CODE' ? $dbh->() : $dbh;
 }
 
 sub sql_prepare_exec {

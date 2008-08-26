@@ -18,7 +18,7 @@ my $dbh = DBI->connect($ENV{FILTER_SQL_DBI})
     or die DBI->errstr;
 
 is(Filter::SQL->dbh, undef);
-is(Filter::SQL->dbh($dbh), $dbh);
+is(Filter::SQL->dbh($dbh), undef);
 is(Filter::SQL->dbh, $dbh);
 
 is(SELECT ROW 1;, 1);

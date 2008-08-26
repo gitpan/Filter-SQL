@@ -1,5 +1,8 @@
 Revision history for Perl extension Filter::SQL.
 
+0.07  Tue Aug 28 14:20:00 2008
+	- dbh() now accepts coderef that return a database handle
+
 0.06  Thu Jun 26 16:15:00 2008
 	- (SELECT ROW) do not croak when table is empty
 
