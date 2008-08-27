@@ -1,6 +1,9 @@
 Revision history for Perl extension Filter::SQL.
 
-0.07  Tue Aug 28 14:20:00 2008
+0.08  Wed Aug 27 13:47:00 2008
+	- fix errors that occur after passing a coderef to dbh()
+
+0.07  Tue Aug 26 14:20:00 2008
 	- dbh() now accepts coderef that return a database handle
 
 0.06  Thu Jun 26 16:15:00 2008

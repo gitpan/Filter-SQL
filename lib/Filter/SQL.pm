@@ -5,7 +5,7 @@ use warnings;
 use Carp;
 use Filter::Simple;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 FILTER_ONLY
     code => sub {
@@ -87,15 +87,15 @@ sub dbh {
 
 sub sql_prepare_exec {
     my ($klass, $sql, @params) = @_;
-    my $pe = $dbh->{PrintError};
-    local $dbh->{PrintError} = undef;
-    my $sth = $dbh->prepare($sql);
+    my $pe = Filter::SQL->dbh->{PrintError};
+    local Filter::SQL->dbh->{PrintError} = undef;
+    my $sth = Filter::SQL->dbh->prepare($sql);
     unless ($sth) {
-        carp $dbh->errstr if $pe;
+        carp Filter::SQL->dbh->errstr if $pe;
         return;
     }
     unless ($sth->execute(@params)) {
-        carp $dbh->errstr if $pe;
+        carp Filter::SQL->dbh->errstr if $pe;
         return;
     }
     $sth;
@@ -103,11 +103,11 @@ sub sql_prepare_exec {
 
 sub sql_selectall {
     my ($klass, $sql, @params) = @_;
-    my $pe = $dbh->{PrintError};
-    local $dbh->{PrintError} = undef;
-    my $rows = $dbh->selectall_arrayref($sql, {}, @params);
+    my $pe = Filter::SQL->dbh->{PrintError};
+    local Filter::SQL->dbh->{PrintError} = undef;
+    my $rows = Filter::SQL->dbh->selectall_arrayref($sql, {}, @params);
     unless ($rows) {
-        carp $dbh->errstr if $pe;
+        carp Filter::SQL->dbh->errstr if $pe;
         return;
     }
     wantarray ? @$rows : $rows->[0];
@@ -115,11 +115,11 @@ sub sql_selectall {
 
 sub sql_selectrow {
     my ($klass, $sql, @params) = @_;
-    my $pe = $dbh->{PrintError};
-    local $dbh->{PrintError} = undef;
-    my $rows = $dbh->selectall_arrayref($sql, {}, @params);
+    my $pe = Filter::SQL->dbh->{PrintError};
+    local Filter::SQL->dbh->{PrintError} = undef;
+    my $rows = Filter::SQL->dbh->selectall_arrayref($sql, {}, @params);
     unless ($rows) {
-        carp $dbh->errstr if $pe;
+        carp Filter::SQL->dbh->errstr if $pe;
         return;
     }
     @$rows ? wantarray ? @{$rows->[0]} : $rows->[0][0] : ();
@@ -127,7 +127,7 @@ sub sql_selectrow {
 
 sub quote {
     my ($klass, $v) = @_;
-    $dbh->quote($v);
+    Filter::SQL->dbh->quote($v);
 }
 
 1;
