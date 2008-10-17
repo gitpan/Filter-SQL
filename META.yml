@@ -17,5 +17,6 @@ requires:
   Carp: 0
   DBI: 0
   Filter::Simple: 0.82
+  List::MoreUtils: 0.21
   Text::Balanced: 2.0.0
-version: 0.08
+version: 0.09

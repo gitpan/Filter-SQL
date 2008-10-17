@@ -3,9 +3,19 @@ package Filter::SQL;
 use strict;
 use warnings;
 use Carp;
+use DBI;
+use List::MoreUtils qw(uniq);
+use base qw(Exporter);
+
 use Filter::Simple;
 
-our $VERSION = '0.08';
+our %EXPORT_TAGS = (
+    dbh   => [ qw/dbh/ ],
+    mysql => [ qw/mysql_insert_id/ ],
+);
+$EXPORT_TAGS{all} = [ uniq map { @$_ } values %EXPORT_TAGS ];
+our @EXPORT_OK = @{$EXPORT_TAGS{all}};
+our $VERSION = '0.09';
 
 FILTER_ONLY
     code => sub {
@@ -76,6 +86,17 @@ sub recover_quotelike {
 
 my $dbh;
 
+if (defined $ENV{FILTER_SQL_DBI}) {
+    $dbh = sub {
+        # self rewrite and return
+        $dbh = DBI->connect(
+            $ENV{FILTER_SQL_DBI},
+            $ENV{FILTER_SQL_DBI_USERNAME} || undef,
+            $ENV{FILTER_SQL_DBI_PASSWORD} || undef,
+        ) or carp DBI->errstr;
+    };
+}
+
 sub dbh {
     my $klass = shift;
     if (@_) {
@@ -130,6 +151,10 @@ sub quote {
     Filter::SQL->dbh->quote($v);
 }
 
+sub mysql_insert_id {
+    Filter::SQL->dbh->{mysql_insertid};
+};
+
 1;
 
 __END__
@@ -140,9 +165,9 @@ Filter::SQL - embedded SQL for perl
 
 =head1 SYNOPSIS
 
-  use Filter::SQL;
+  # set env. var. FILTER_SQL_DBI to DBI URI of the database
 
-  Filter::SQL->dbh(DBI->connect('dbi:...')) or die DBI->errstr;
+  use Filter::SQL;
 
   EXEC CREATE TABLE t (v int not null);;
 
@@ -216,6 +241,18 @@ A string between curly brackets it considered as a perl expression.
 
   my $t = 'hello';
   print SELECT ROW {$t . ' world'};;   # hello world
+
+=head1 ACCESSORS
+
+=head2 dbh
+=head2 dbh($new_dbh)
+=head2 dbh(sub { ... })
+
+When called with no parameters, returns a database handle currently assigned.  When given a parameter, registers the value as the assigned database handle.  When a subref is being assigned, C<Filter::SQL> invokes the subroutine everytime C<dbh> is called to obtain the current database handle.  The function is exported by :dbh tag.
+
+=head2 mysql_insert_id
+
+Accessor to $dbh->{mysql_insertid} of DBD::mysql.  The function is exported by :mysql tag.
 
 =head1 AUTHOR
 

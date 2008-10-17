@@ -2,7 +2,6 @@
 
 use strict;
 use warnings;
-use DBI;
 use Filter::SQL;
 use Test::More;
 
@@ -10,16 +9,11 @@ BEGIN {
     if (! $ENV{FILTER_SQL_DBI}) {
         plan skip_all => 'Set FILTER_SQL_DBI to run these tests';
     } else {
-        plan tests => 36;
+        plan tests => 32;
     }
 };
 
-my $dbh = DBI->connect($ENV{FILTER_SQL_DBI})
-    or die DBI->errstr;
-
-is(Filter::SQL->dbh, undef);
-is(Filter::SQL->dbh($dbh), undef);
-is(Filter::SQL->dbh, $dbh);
+ok(ref Filter::SQL->dbh);
 
 is(SELECT ROW 1;, 1);
 is(SELECT ROW "test";, 'test');
@@ -39,8 +33,7 @@ is(SELECT ROW $a->{foo}-1;, 2);
 
 is(SELECT ROW {1 + 2};, 3);
 
-ok(EXEC DROP TABLE IF EXISTS filter_sql_t;);
-ok(EXEC CREATE TABLE filter_sql_t (v INT NOT NULL););
+ok(EXEC CREATE TEMPORARY TABLE filter_sql_t (v INT NOT NULL););
 
 is_deeply(
     [ SELECT ROW * FROM filter_sql_t; ],
@@ -79,8 +72,9 @@ is_deeply(
 );
 is(SELECT ROW COUNT(*) FROM filter_sql_t;, 3);
 
-ok(EXEC DROP TABLE filter_sql_t;);
-ok(EXEC CREATE TABLE filter_sql_t (
+ok(EXEC DROP TEMPORARY TABLE filter_sql_t;);
+
+ok(EXEC CREATE TEMPORARY TABLE filter_sql_t (
     S INT NOT NULL,
     Q INT NOT NULL,
     G INT NOT NULL
@@ -96,5 +90,3 @@ is_deeply(
     [ SELECT ROW q,1,g FROM filter_sql_t; ],
     [ 21,1,31 ],
 );
-
-ok(EXEC DROP TABLE filter_sql_t;);

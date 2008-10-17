@@ -1,5 +1,9 @@
 Revision history for Perl extension Filter::SQL.
 
+0.09  Fri Oct 17 15:55:00 2008
+	- autoconnect to database when FILTER_SQL_DBI env. var. exists
+	- add interface to mysql_insert_id
+
 0.08  Wed Aug 27 13:47:00 2008
 	- fix errors that occur after passing a coderef to dbh()
 
