@@ -1,5 +1,8 @@
 Revision history for Perl extension Filter::SQL.
 
+0.10  Tue Nov 04 11:00:00 2008
+	- implement ``SELECT AS HASH'' directive
+
 0.09  Fri Oct 17 15:55:00 2008
 	- autoconnect to database when FILTER_SQL_DBI env. var. exists
 	- add interface to mysql_insert_id

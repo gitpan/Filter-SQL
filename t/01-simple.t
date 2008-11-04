@@ -9,7 +9,7 @@ BEGIN {
     if (! $ENV{FILTER_SQL_DBI}) {
         plan skip_all => 'Set FILTER_SQL_DBI to run these tests';
     } else {
-        plan tests => 32;
+        plan tests => 35;
     }
 };
 
@@ -39,6 +39,10 @@ is_deeply(
     [ SELECT ROW * FROM filter_sql_t; ],
     [],
 );
+is_deeply(
+    { SELECT ROW AS HASH * FROM filter_sql_t; },
+    {},
+);
 
 is_deeply(
     scalar(SELECT ROW * FROM filter_sql_t;),
@@ -59,6 +63,11 @@ is_deeply(
     [ 0 ],
 );
 
+is_deeply(
+    { SELECT ROW AS HASH * FROM filter_sql_t; },
+    { v => 0 },
+);
+
 my $sth = EXEC SELECT v FROM filter_sql_t;;
 ok($sth);
 is_deeply(
@@ -69,6 +78,10 @@ is_deeply(
 is_deeply(
     [ SELECT * FROM filter_sql_t; ],
     [ [ 0 ], [ 1 ], [ 2 ], ],
+);
+is_deeply(
+    [ SELECT AS HASH * FROM filter_sql_t; ],
+    [ { v => 0 }, { v => 1 }, { v => 2 }, ],
 );
 is(SELECT ROW COUNT(*) FROM filter_sql_t;, 3);
 

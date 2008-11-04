@@ -15,11 +15,11 @@ our %EXPORT_TAGS = (
 );
 $EXPORT_TAGS{all} = [ uniq map { @$_ } values %EXPORT_TAGS ];
 our @EXPORT_OK = @{$EXPORT_TAGS{all}};
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 FILTER_ONLY
     code => sub {
-        s{(EXEC\s+(?:\S+)|SELECT\s+ROW|SELECT|INSERT|UPDATE|DELETE|REPLACE) ([^;]*);}{'Filter::SQL->' . Filter::SQL::to_func($1) . quote_vars($2) . ")"}egm;
+        s{(EXEC\s+(?:\S+)|SELECT(?:\s+ROW|)(?:\s+AS\s+HASH|)|INSERT|UPDATE|DELETE|REPLACE)\s+([^;]*);}{'Filter::SQL->' . Filter::SQL::to_func($1) . quote_vars($2) . ")"}egm;
 #        print STDERR $_; $_;
     };
 
@@ -28,10 +28,13 @@ sub to_func {
     $op = uc $op;
     if ($op =~ /^EXEC\s+/) {
         return "sql_prepare_exec('$' ";
-    } elsif ($op =~ /^SELECT\s+ROW/) {
-        return "sql_selectrow('SELECT ";
-    } elsif ($op eq 'SELECT') {
-        return "sql_selectall('SELECT ";
+    } elsif ($op =~ /^SELECT(\s+ROW|)(\s+AS\s+HASH|)/) {
+        my $as_hash = $2 ? '1' : 'undef';
+        if ($1) {
+            return "sql_selectrow($as_hash, 'SELECT ";
+        } else {
+            return "sql_selectall($as_hash, 'SELECT ";
+        }
     } else {
         return "sql_prepare_exec('$op ";
     }
@@ -123,10 +126,14 @@ sub sql_prepare_exec {
 }
 
 sub sql_selectall {
-    my ($klass, $sql, @params) = @_;
+    my ($klass, $as_hash, $sql, @params) = @_;
     my $pe = Filter::SQL->dbh->{PrintError};
     local Filter::SQL->dbh->{PrintError} = undef;
-    my $rows = Filter::SQL->dbh->selectall_arrayref($sql, {}, @params);
+    my $rows = Filter::SQL->dbh->selectall_arrayref(
+        $sql,
+        $as_hash ? { Slice => {} } : {},
+        @params,
+    );
     unless ($rows) {
         carp Filter::SQL->dbh->errstr if $pe;
         return;
@@ -135,14 +142,20 @@ sub sql_selectall {
 }
 
 sub sql_selectrow {
-    my ($klass, $sql, @params) = @_;
+    my ($klass, $as_hash, $sql, @params) = @_;
     my $pe = Filter::SQL->dbh->{PrintError};
     local Filter::SQL->dbh->{PrintError} = undef;
-    my $rows = Filter::SQL->dbh->selectall_arrayref($sql, {}, @params);
+    my $rows = Filter::SQL->dbh->selectall_arrayref(
+        $sql,
+        $as_hash ? { Slice => {} } : {},
+        @params,
+    );
     unless ($rows) {
         carp Filter::SQL->dbh->errstr if $pe;
         return;
     }
+    return @$rows ? %{$rows->[0]} : ()
+        if $as_hash;
     @$rows ? wantarray ? @{$rows->[0]} : $rows->[0][0] : ();
 }
 
@@ -173,13 +186,20 @@ Filter::SQL - embedded SQL for perl
 
   $v = 12345;
   INSERT INTO t (v) VALUES ($v);;
-  
+
   foreach my $row (SELECT * FROM t;) {
       print "v: $row[0]\n";
   }
 
   if (SELECT ROW COUNT(*) FROM t; == 1) {
       print "1 row in table\n";
+  }
+
+  foreach my $row (SELECT AS HASH * FROM t;) {
+      print "---\n";
+      foreach my $name (sort keys %$row) {
+          print "$name: $row->{$name}\n";
+      }
   }
 
 =head1 SYNTAX
